@@ -12,15 +12,15 @@ function Sidebar({ open, onClose }) {
       <div className="sidebar-links">
         <NavLink to="/" end className="nav-link">
           <FaHome className="icon" />
-          Menu
+          Servers
         </NavLink>
         <NavLink to="/about" className="nav-link">
           <FaUserFriends className="icon" />
-          Server
+          Groups
         </NavLink>
         <NavLink to="/settings" className="nav-link">
           <FaCog className="icon" />
-          Groups
+          Authentication
         </NavLink>
       </div>
       <button className="sidebar-close" onClick={onClose} aria-label="Close Sidebar">

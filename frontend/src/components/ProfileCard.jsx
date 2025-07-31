@@ -10,8 +10,8 @@ function ProfileCard() {
         className="avatar"
       />
       <div className="profile-details">
-        <div className="profile-name">Jane Doe</div>
-        <div className="profile-role">Product Manager</div>
+        <div className="profile-name">Admin</div>
+        <div className="profile-role">Admin</div>
       </div>
     </div>
   );
