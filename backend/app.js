@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:5173', // or use "*" for public access; best to restrict in production!
+  origin: 'http://192.168.0.43:5173', // or use "*" for public access; best to restrict in production!
 }));
 /** Connection pool **/
 const pool = mysql.createPool({
