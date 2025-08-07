@@ -16,7 +16,7 @@ function Settings() {
 
   // Fetch users from backend API
   useEffect(() => {
-    fetch("http://localhost:3001/api/proxmox_creds")
+    fetch("http://192.168.0.43:3001/api/proxmox_creds")
       .then((res) => res.json())
       .then((data) => {
         setUsers(data);
@@ -32,7 +32,7 @@ function Settings() {
   // Handle form submit
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch("http://localhost:3001/api/proxmox_creds", {
+    fetch("http://192.168.0.43:3001/api/proxmox_creds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form), // Now includes api_token
