@@ -51,23 +51,28 @@ function Settings() {
         });
 
         // Show loader and call launchVM API
-          setLaunching(true);
+        setLaunching(true);
+        const data = {
+          name: form.credential_name,
+          project_id: 1,
+          password: null,
+          json: "{}",
+          env: JSON.stringify({
+            PROXMOX_API_USER: form.api_user,
+            PROXMOX_API_TOKEN: form.api_token,
+            PROXMOX_API_URL: form.api_url,
+            PROXMOX_API_TOKEN_ID: form.api_token_id
+          }),
+          secrets: null
+        };
+
         fetch("http://192.168.0.43:3000/api/project/1/environment", {
           method: "POST",
           headers: {
             "Authorization": "Bearer vtdgwvof4ifaamne_prhtlwvnzv6brf4nrapw0u61ly=",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            name: "MY_VAR_GROUP",
-            project_id: 1,
-            json: {
-              PROXMOX_APLUSER: form.api_user,
-              PROXMOX_APL_TOKEN: form.api_token,
-              PROXMOX_APL_URL: form.api_url,
-              PROXMOX_APL_TOKEN_ID: form.api_token_id,
-            },
-          }),
+          body: JSON.stringify(data),
         }).finally(() => setLaunching(false));
       });
   };
