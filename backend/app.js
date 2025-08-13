@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:5173', // or use "*" for public access; best to restrict in production!
+  origin: 'http://192.168.0.43:5173', // or use "*" for public access; best to restrict in production!
 }));
 /** Connection pool **/
 const pool = mysql.createPool({
@@ -125,7 +125,7 @@ app.post('/api/proxmox_creds', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`API listening on port ${port}`);
 });
