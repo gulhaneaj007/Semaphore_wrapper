@@ -66,10 +66,9 @@ function Settings() {
           secrets: null
         };
 
-        fetch("http://192.168.0.43:3000/api/project/1/environment", {
+        fetch("http://192.168.0.43:3001/api/project/1/environment", {
           method: "POST",
           headers: {
-            "Authorization": "Bearer vtdgwvof4ifaamne_prhtlwvnzv6brf4nrapw0u61ly=",
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
