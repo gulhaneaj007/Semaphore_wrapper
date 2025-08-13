@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {Box,Button,Dialog,DialogTitle,DialogContent,DialogActions,TextField,Table,TableBody,TableCell,TableContainer,TableHead,TableRow,Paper,Typography,CircularProgress} from "@mui/material";
+import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, CircularProgress } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
 function Settings() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [launching, setLaunching] = useState(false); // Add this state
   const [form, setForm] = useState({
     credential_name: "",
     api_user: "",
@@ -48,6 +49,26 @@ function Settings() {
           api_token_id: "",
           api_token: "", // Reset api_token
         });
+
+        // Show loader and call launchVM API
+          setLaunching(true);
+        fetch("http://192.168.0.43:3000/api/project/1/environment", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer vtdgwvof4ifaamne_prhtlwvnzv6brf4nrapw0u61ly=",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "MY_VAR_GROUP",
+            project_id: 1,
+            json: {
+              PROXMOX_APLUSER: form.api_user,
+              PROXMOX_APL_TOKEN: form.api_token,
+              PROXMOX_APL_URL: form.api_url,
+              PROXMOX_APL_TOKEN_ID: form.api_token_id,
+            },
+          }),
+        }).finally(() => setLaunching(false));
       });
   };
 
@@ -107,7 +128,12 @@ function Settings() {
           </TableBody>
         </Table>
       </TableContainer>
-
+      {launching && (
+        <Box display="flex" justifyContent="center" alignItems="center" mt={2}>
+          <CircularProgress size={32} />
+          <Typography ml={2}>Launching VM...</Typography>
+        </Box>
+      )}
       {/* Add Credential Modal */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Add Credential</DialogTitle>
