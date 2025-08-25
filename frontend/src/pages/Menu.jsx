@@ -7,15 +7,18 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+const BASE_URL = "http://192.168.0.43:3001";
+
 function Servers() {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Create Server modal
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [provider, setProvider] = useState("proxmox"); // default
+  const [provider, setProvider] = useState("proxmox");
   const [error, setError] = useState("");
 
-  // Proxmox form state
   const [pxForm, setPxForm] = useState({
     new_vm_name: "",
     vm_memory: "",
@@ -26,23 +29,37 @@ function Servers() {
     ipconfig0: "",
   });
 
-  // Azure form (placeholder you can extend)
   const [azForm, setAzForm] = useState({
     vm_name: "",
     size: "",
     resource_group: "",
   });
 
-  // Fetch servers from backend API
+  // Add Replica modal (same Proxmox fields)
+  const [replicaOpen, setReplicaOpen] = useState(false);
+  const [replicaCreating, setReplicaCreating] = useState(false);
+  const [replicaError, setReplicaError] = useState("");
+  const [selectedServer, setSelectedServer] = useState(null);
+  const [replicaForm, setReplicaForm] = useState({
+    new_vm_name: "",
+    vm_memory: "",
+    vm_cores: "",
+    ci_user: "",
+    ci_password: "",
+    mysql_password: "",
+    ipconfig0: "",
+  });
+
+  // Load servers
   useEffect(() => {
-    fetch("http://192.168.0.43:3001/api/servers")
+    fetch(`${BASE_URL}/api/servers`)
       .then((res) => res.json())
       .then((data) => setServers(data || []))
       .catch(() => setServers([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const resetForms = () => {
+  const resetCreateForms = () => {
     setPxForm({
       new_vm_name: "",
       vm_memory: "",
@@ -61,6 +78,19 @@ function Servers() {
     setError("");
   };
 
+  const resetReplicaForm = () => {
+    setReplicaForm({
+      new_vm_name: "",
+      vm_memory: "",
+      vm_cores: "",
+      ci_user: "",
+      ci_password: "",
+      mysql_password: "",
+      ipconfig0: "",
+    });
+    setReplicaError("");
+  };
+
   const handlePxChange = (e) => {
     const { name, value } = e.target;
     setPxForm((s) => ({ ...s, [name]: value }));
@@ -71,55 +101,52 @@ function Servers() {
     setAzForm((s) => ({ ...s, [name]: value }));
   };
 
-  const validateProxmox = () => {
-    const required = ["new_vm_name", "vm_memory", "vm_cores", "ci_user", "ci_password", "mysql_password", "ipconfig0"];
-    for (const k of required) {
-      if (!pxForm[k] || String(pxForm[k]).trim() === "") {
-        setError(`Please provide: ${k.replace(/_/g, " ")}`);
-        return false;
-      }
-    }
-    if (Number.isNaN(Number(pxForm.vm_memory)) || Number(pxForm.vm_memory) <= 0) {
-      setError("vm_memory must be a positive number (MiB).");
-      return false;
-    }
-    if (Number.isNaN(Number(pxForm.vm_cores)) || Number(pxForm.vm_cores) <= 0) {
-      setError("vm_cores must be a positive number.");
-      return false;
-    }
-    return true;
+  const handleReplicaChange = (e) => {
+    const { name, value } = e.target;
+    setReplicaForm((s) => ({ ...s, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const validateProxmoxFields = (data) => {
+    const required = ["new_vm_name", "vm_memory", "vm_cores", "ci_user", "ci_password", "mysql_password", "ipconfig0"];
+    for (const k of required) {
+      if (!data[k] || String(data[k]).trim() === "") {
+        return `Please provide: ${k.replace(/_/g, " ")}`;
+      }
+    }
+    if (Number.isNaN(Number(data.vm_memory)) || Number(data.vm_memory) <= 0) {
+      return "vm_memory must be a positive number (MiB).";
+    }
+    if (Number.isNaN(Number(data.vm_cores)) || Number(data.vm_cores) <= 0) {
+      return "vm_cores must be a positive number.";
+    }
+    // Simple ipconfig0 sanity check
+    if (!/ip=\d+\.\d+\.\d+\.\d+\/\d+,\s*gw=\d+\.\d+\.\d+\.\d+/i.test(data.ipconfig0)) {
+      return "ipconfig0 must look like: ip=192.168.0.39/24,gw=192.168.0.1";
+    }
+    return "";
+  };
+
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+    setCreating(true);
     try {
-      setCreating(true);
-
       if (provider === "proxmox") {
-        if (!validateProxmox()) {
-          setCreating(false);
-          return;
-        }
+        const v = validateProxmoxFields(pxForm);
+        if (v) throw new Error(v);
 
-        // POST to your backend endpoint that triggers the Proxmox Ansible workflow
-        // Adjust the route/body shape to match your API
-        const res = await fetch("http://192.168.0.43:3001/api/servers/proxmox", {
+        const res = await fetch(`${BASE_URL}/api/servers/proxmox`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(pxForm),
         });
-
         if (!res.ok) throw new Error(`Create failed (${res.status})`);
         const created = await res.json();
-
         setServers((s) => [created, ...s]);
         setOpen(false);
-        resetForms();
+        resetCreateForms();
       } else {
-        // Azure placeholder
-        const res = await fetch("http://192.168.0.43:3001/api/servers/azure", {
+        const res = await fetch(`${BASE_URL}/api/servers/azure`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(azForm),
@@ -128,12 +155,60 @@ function Servers() {
         const created = await res.json();
         setServers((s) => [created, ...s]);
         setOpen(false);
-        resetForms();
+        resetCreateForms();
       }
     } catch (err) {
       setError(err.message || "Failed to create server.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openReplicaFor = (server) => {
+    setSelectedServer(server);
+    resetReplicaForm();
+
+    // Optional: prefill sensible defaults
+    setReplicaForm((s) => ({
+      ...s,
+      new_vm_name: `${server.name || "replica"}-r`,
+      vm_memory: server.memory_mib || "",
+      vm_cores: server.vcpu || "",
+    }));
+
+    setReplicaOpen(true);
+  };
+
+  const handleReplicaSubmit = async (e) => {
+    e.preventDefault();
+    setReplicaError("");
+    setReplicaCreating(true);
+    try {
+      if (!selectedServer) throw new Error("No primary selected.");
+      const v = validateProxmoxFields(replicaForm);
+      if (v) throw new Error(v);
+
+      // Adjust the endpoint to match your backend
+      const res = await fetch(`${BASE_URL}/api/servers/${selectedServer.id}/replica/proxmox`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(replicaForm),
+      });
+      if (!res.ok) throw new Error(`Replica creation failed (${res.status})`);
+      const createdReplica = await res.json();
+
+      // Option 1: append to list (if API returns a server-like object)
+      setServers((s) => [createdReplica, ...s]);
+      // Option 2: refresh all servers (uncomment if needed)
+      // const refreshed = await fetch(`${BASE_URL}/api/servers`).then(r => r.json());
+      // setServers(refreshed || []);
+
+      setReplicaOpen(false);
+      resetReplicaForm();
+    } catch (err) {
+      setReplicaError(err.message || "Failed to create replica.");
+    } finally {
+      setReplicaCreating(false);
     }
   };
 
@@ -159,18 +234,19 @@ function Servers() {
               <TableCell>Status</TableCell>
               <TableCell>IP Address</TableCell>
               <TableCell>Created At</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : servers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   No servers found.
                 </TableCell>
               </TableRow>
@@ -184,6 +260,15 @@ function Servers() {
                   <TableCell>
                     {sv.created_at ? new Date(sv.created_at).toLocaleString() : "—"}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => openReplicaFor(sv)}
+                    >
+                      Add Replica
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -192,9 +277,9 @@ function Servers() {
       </TableContainer>
 
       {/* Create Server Modal */}
-      <Dialog open={open} onClose={() => { setOpen(false); resetForms(); }} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={() => { setOpen(false); resetCreateForms(); }} maxWidth="sm" fullWidth>
         <DialogTitle>Create Server</DialogTitle>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleCreateSubmit}>
           <DialogContent>
             <Stack spacing={2}>
               {error && <Alert severity="error">{error}</Alert>}
@@ -307,9 +392,90 @@ function Servers() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => { setOpen(false); resetForms(); }}>Cancel</Button>
+            <Button onClick={() => { setOpen(false); resetCreateForms(); }}>Cancel</Button>
             <Button type="submit" variant="contained" disabled={creating}>
               {creating ? "Creating…" : "Create"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Add Replica Modal (Proxmox fields) */}
+      <Dialog open={replicaOpen} onClose={() => setReplicaOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Add Replica {selectedServer?.name ? `for ${selectedServer.name}` : ""}
+        </DialogTitle>
+        <form onSubmit={handleReplicaSubmit}>
+          <DialogContent>
+            <Stack spacing={2}>
+              {replicaError && <Alert severity="error">{replicaError}</Alert>}
+
+              <TextField
+                label="new_vm_name"
+                name="new_vm_name"
+                value={replicaForm.new_vm_name}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="vm_memory (MiB)"
+                name="vm_memory"
+                type="number"
+                value={replicaForm.vm_memory}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="vm_cores"
+                name="vm_cores"
+                type="number"
+                value={replicaForm.vm_cores}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="ci_user"
+                name="ci_user"
+                value={replicaForm.ci_user}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="ci_password"
+                name="ci_password"
+                type="password"
+                value={replicaForm.ci_password}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="mysql_password"
+                name="mysql_password"
+                type="password"
+                value={replicaForm.mysql_password}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+              <TextField
+                label="ipconfig0 (e.g. ip=192.168.0.39/24,gw=192.168.0.1)"
+                name="ipconfig0"
+                value={replicaForm.ipconfig0}
+                onChange={handleReplicaChange}
+                fullWidth
+                required
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setReplicaOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={replicaCreating}>
+              {replicaCreating ? "Creating…" : "Create Replica"}
             </Button>
           </DialogActions>
         </form>
