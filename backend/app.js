@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://192.168.0.43:5173', // adjust for your frontend origin
+  origin: 'http://192.168.0.43:5173','http://192.168.0.43:3000' // adjust for your frontend origin
 }));
 
 /** Connection pool **/
