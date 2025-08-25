@@ -14,31 +14,21 @@ const allowedOrigins = [
   
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow REST tools / curl (no origin) and allowed origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS not allowed for origin: ${origin}`));
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
   credentials: true,
-}));
+  optionsSuccessStatus: 204, // older browsers choke on 204 preflight
+};
 
-// Handle preflight requests
-app.options('*', cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS not allowed for origin: ${origin}`));
-  },
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,
-}));
+app.use(cors(corsOptions));
+
+// Express 5: use a regex instead of "*"
+app.options(/.*/, cors(corsOptions));  // ✅ preflig
 
 /** Connection pool **/
 const pool = mysql.createPool({
