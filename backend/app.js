@@ -8,20 +8,9 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-const allowedOrigins = [
-  'http://192.168.0.43:5173', // Vite dev
-  'http://192.168.0.43:3000', // (if you also use this)
-];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow REST tools / curl (no origin) and allow-listed origins
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,
+  origin: 'http://192.168.0.43:5173', // adjust for your frontend origin
 }));
 
 /** Connection pool **/
