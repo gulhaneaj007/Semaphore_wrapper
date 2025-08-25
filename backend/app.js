@@ -11,7 +11,8 @@ app.use(express.json());
 
 const allowedOrigins = [
   'http://192.168.0.43:5173',
-   'http://localhost:5173', // Vite dev
+   'http://localhost:5173',
+   'http://192.168.0.43:3000', // Vite dev
   
 ];
 
