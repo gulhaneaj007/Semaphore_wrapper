@@ -135,7 +135,7 @@ function Servers() {
         const v = validateProxmoxFields(pxForm);
         if (v) throw new Error(v);
 
-        const res = await fetch(`${BASE_URL}/api/servers/proxmox`, {
+        const res = await fetch(`${BASE_URL}/api/servers`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(pxForm),
