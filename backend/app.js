@@ -23,57 +23,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-/* ------------------------------------------------------------------
-   VM Configuration APIs (your original code)
-------------------------------------------------------------------- */
 
-/** Input validation schema **/
-const vmSchema = Joi.object({
-  vm_name: Joi.string().max(255).required(),
-  vm_memory: Joi.number().integer().min(1).required(),
-  vm_cores: Joi.number().integer().min(1).required(),
-  cloud_init_user: Joi.string().max(50).required(),
-  cloud_init_password: Joi.string().min(6).max(255).required(),
-  cloud_init_ipconfig: Joi.string().max(100).required(),
-  cloud_init_nameservers: Joi.string().max(100).required()
-});
-
-/** Insert VM Configuration API **/
-app.post('/api/vms', async (req, res) => {
-  const { error, value } = vmSchema.validate(req.body);
-  if (error) return res.status(400).json({ error: error.details[0].message });
-
-  const {
-    vm_name, vm_memory, vm_cores,
-    cloud_init_user, cloud_init_password,
-    cloud_init_ipconfig, cloud_init_nameservers
-  } = value;
-
-  try {
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
-    const hashedPassword = await bcrypt.hash(cloud_init_password, saltRounds);
-
-    const sql = `
-      INSERT INTO proxmox_vm_configurations
-      (vm_name, vm_memory, vm_cores, cloud_init_user, cloud_init_password, cloud_init_ipconfig, cloud_init_nameservers)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    const params = [
-      vm_name, vm_memory, vm_cores,
-      cloud_init_user, hashedPassword,
-      cloud_init_ipconfig, cloud_init_nameservers
-    ];
-
-    const [result] = await pool.execute(sql, params);
-    res.status(201).json({ id: result.insertId, message: "VM configuration created." });
-  } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: "VM name must be unique." });
-    }
-    console.error(err);
-    res.status(500).json({ error: "Internal server error." });
-  }
-});
 
 /** GET API to fetch all proxmox_creds **/
 app.get('/api/proxmox_creds', async (req, res) => {
@@ -141,9 +91,7 @@ app.post('/api/project/1/environment', async (req, res) => {
   }
 });
 
-/* ------------------------------------------------------------------
-   Servers APIs (new code for masters & replicas)
-------------------------------------------------------------------- */
+
 
 // Schema for master servers
 const serverSchema = Joi.object({
