@@ -9,28 +9,8 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 
-const allowedOrigins = [
-  'http://192.168.0.43:5173',
-   'http://localhost:5173',
-   'http://192.168.0.43:3000', // Vite dev
-  
-];
 
-const corsOptions = {
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
-  },
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204, // older browsers choke on 204 preflight
-};
 
-app.use(cors(corsOptions));
-
-// Express 5: use a regex instead of "*"
-app.options(/.*/, cors(corsOptions));  // ✅ preflig
 
 /** Connection pool **/
 const pool = mysql.createPool({
